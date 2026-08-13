@@ -61,6 +61,64 @@ document.querySelector('#app').innerHTML = `
 
 setupCounter(document.querySelector('#counter'))
 
-const em = await createModule();
+const input = document.getElementById("textfile-input")
 
-console.log(em.ccall("load", "string"));
+input.addEventListener('change', async (event) => {
+
+    const em = await createModule();
+
+    em.FS.writeFile("/file.txt", new Uint8Array(await event.target.files[0].arrayBuffer()));
+
+    const getPageCount = em.cwrap(
+        "page_count",
+        "number",
+        [
+            "string", // filename
+            "string",  // ttf filename
+            "number",  // font_size
+            "number",  // line spacing
+            "number",  // page height
+            "number",  // page width
+            "number",  // margin_top 
+            "number",  // margin_bottom
+            "number",  // margin_left
+            "number",  // margin_right
+            "number",  // paragraph_spacing_before
+            "number",  // paragraph_spacing_after
+            "number",  // header_from_top
+            "number"  // footer_from_bottom
+        ]
+    )
+
+    const fontSize = 12
+    const lineSpacing = 1.15
+    const pageHeight = 11
+    const pageWidth = 8.5
+    const marginTop = 1
+    const marginBottom = 1
+    const marginLeft = 1
+    const marginRight = 1
+    const paragraphSpacingBefore = 0
+    const paragraphSpacingAfter = 0.14
+    const headerFromTop = 0.5
+    const headerFromBottom = 0.5
+
+    const result = getPageCount(
+        "/file.txt",
+        "/arial.ttf",
+        fontSize,
+        lineSpacing,
+        pageHeight,
+        pageWidth,
+        marginTop,
+        marginBottom,
+        marginLeft,
+        marginRight,
+        paragraphSpacingBefore,
+        paragraphSpacingAfter,
+        headerFromTop,
+        headerFromBottom
+    );
+
+    console.log(result);
+})
