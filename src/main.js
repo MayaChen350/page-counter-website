@@ -1,7 +1,5 @@
 import './style.scss'
 
-import createModule from "./pagecounter-lib.js"
-
 function addDefaultDataConverter(optionId, mmValue, inchValue) {
     document.querySelector(`#${optionId} + select`)
         .addEventListener('change', (ev) => {
@@ -32,64 +30,68 @@ addDefaultDataConverter("paragraph-spacing-after", 0.35, 0.14)
 addDefaultDataConverter("header-from-top", 1.25, 0.5)
 addDefaultDataConverter("footer-from-bottom", 1.25, 0.5)
 
-const input = document.getElementById("textfile-input")
+import createModule from "./pagecounter-lib.js"
+const { cwrap, FS } = await createModule();
+const getPageCount = cwrap(
+    "page_count",
+    "number",
+    [
+        "string",  // filename
+        "string",  // ttf filename
+        "number",  // font_size
+        "number",  // line spacing
+        "number",  // page height
+        "number",  // page width
+        "number",  // margin_top 
+        "number",  // margin_bottom
+        "number",  // margin_left
+        "number",  // margin_right
+        "number",  // paragraph_spacing_before
+        "number",  // paragraph_spacing_after
+        "number",  // header_from_top
+        "number"   // footer_from_bottom
+    ]
+)
 
-input.addEventListener('change', async (event) => {
+const cmToInches = (valcm) => valcm / 2.54
 
-    const em = await createModule();
+document.getElementById("form-submit-btn")
+    .addEventListener('click', async (ev) => {
+        ev.preventDefault()
 
-    em.FS.writeFile("/file.txt", new Uint8Array(await event.target.files[0].arrayBuffer()));
+        const resultat = document.getElementById("pagecount-result")
+        resultat.hidden = true
 
-    const getPageCount = em.cwrap(
-        "page_count",
-        "number",
-        [
-            "string",  // filename
-            "string",  // ttf filename
-            "number",  // font_size
-            "number",  // line spacing
-            "number",  // page height
-            "number",  // page width
-            "number",  // margin_top 
-            "number",  // margin_bottom
-            "number",  // margin_left
-            "number",  // margin_right
-            "number",  // paragraph_spacing_before
-            "number",  // paragraph_spacing_after
-            "number",  // header_from_top
-            "number"   // footer_from_bottom
-        ]
-    )
+        FS.writeFile("/file.txt", new Uint8Array(await (document.getElementById("textfile-input")
+            .files[0])
+            .arrayBuffer()));
 
-    const fontSize = 12
-    const lineSpacing = 1.15
-    const pageHeight = 11
-    const pageWidth = 8.5
-    const marginTop = 1
-    const marginBottom = 1
-    const marginLeft = 1
-    const marginRight = 1
-    const paragraphSpacingBefore = 0
-    const paragraphSpacingAfter = 0.14
-    const headerFromTop = 0.5
-    const headerFromBottom = 0.5
+        const valueOf = (id) => {
+            const val = document.getElementById(id).value
+            const unit = document.querySelector(`#${id} + select`)?.value
+            if (unit !== null && unit === "cm") return cmToInches(val)
+            else return val
+        }
 
-    const result = getPageCount(
-        "/file.txt",
-        "/arial.ttf",
-        fontSize,
-        lineSpacing,
-        pageHeight,
-        pageWidth,
-        marginTop,
-        marginBottom,
-        marginLeft,
-        marginRight,
-        paragraphSpacingBefore,
-        paragraphSpacingAfter,
-        headerFromTop,
-        headerFromBottom
-    );
+        const result = getPageCount(
+            "/file.txt",
+            "/arial.ttf",
+            valueOf("font-size"),
+            valueOf("line-spacing"),
+            valueOf("page-height"),
+            valueOf("page-width"),
+            valueOf("margin-top"),
+            valueOf("margin-bottom"),
+            valueOf("margin-left"),
+            valueOf("margin-right"),
+            valueOf("paragraph-spacing-before"),
+            valueOf("paragraph-spacing-after"),
+            valueOf("header-from-top"),
+            valueOf("footer-from-bottom")
+        );
 
-    console.log(result);
-})
+        FS.unlink("/file.txt")
+
+        resultat.textContent = `Result: ${result} pages`
+        resultat.hidden = false
+    })
