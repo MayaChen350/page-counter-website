@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # em folder stuff
-em/include/*
+pagecounter-lib.*
+
